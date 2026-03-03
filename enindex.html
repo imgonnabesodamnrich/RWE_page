@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paper Notes: Randomized Wavelet Expansion (RWE)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    
+    <script>
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; display: flex; min-height: 100vh; background-color: #fff; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+        .sidebar { width: 280px; background-color: #f6f8fa; border-right: 1px solid #d0d7de; position: fixed; height: 100vh; overflow-y: auto; padding: 24px; box-sizing: border-box; top: 0; left: 0; z-index: 100; }
+        .sidebar h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #24292f; }
+        .sidebar ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar li { margin-bottom: 8px; }
+        .sidebar a { text-decoration: none; color: #57606a; font-size: 14px; display: block; padding: 4px 0; transition: color 0.2s; }
+        .sidebar a:hover { color: #0969da; text-decoration: underline; }
+        .sidebar .sub-menu { margin-left: 20px; margin-top: 4px; font-size: 13px; }
+        .main-content { margin-left: 280px; flex: 1; padding: 40px 60px; max-width: 1000px; }
+        html { scroll-behavior: smooth; }
+        div[align="center"] { text-align: center; margin: 20px 0; }
+        table { display: block; width: 100%; overflow: auto; }
+        @media (max-width: 900px) {
+            body { display: block; }
+            .sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid #d0d7de; }
+            .main-content { margin-left: 0; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <h2>Contents</h2>
+        <ul>
+            <li><a href="#1-background-and-necessity">1. Background & Necessity</a></li>
+            <li>
+                <a href="#2-core-method-rwe">2. Core Method: RWE</a>
+                <ul class="sub-menu">
+                    <li><a href="#21-design-concept">2.1 Design Concept</a></li>
+                    <li><a href="#22-algorithm-implementation">2.2 Implementation Steps</a></li>
+                </ul>
+            </li>
+            <li><a href="#3-experimental-verification">3. Experimental Verification</a></li>
+            <li><a href="#4-conclusion">4. Conclusion</a></li>
+            <li><a href="#literature-source">Literature Source</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content markdown-body">
+        
+        <h1>Paper Notes: Data Augmentation via Randomized Wavelet Expansion (RWE)</h1>
+
+        <blockquote>
+            <p><strong>Paper Title</strong>: Data Augmentation via Randomized Wavelet Expansion and Its Application in Few-Shot Fault Diagnosis of Aviation Hydraulic Pumps</p>
+            <p><strong>Journal</strong>: <em>IEEE Transactions on Instrumentation and Measurement</em>, Vol. 71, 2022</p>
+            <p><strong>DOI</strong>: <a href="https://doi.org/10.1109/TIM.2021.3130300">10.1109/TIM.2021.3130300</a></p>
+        </blockquote>
+
+        <p>
+            <img src="https://img.shields.io/badge/DOI-10.1109%2FTIM.2021.3130300-007EC6" alt="DOI">
+            <img src="https://img.shields.io/badge/Status-Published-success" alt="Status">
+            <img src="https://img.shields.io/badge/Topic-Data_Augmentation-orange" alt="Topic">
+        </p>
+
+        <hr>
+
+        <h2 id="1-background-and-necessity">1. Background and Necessity of Data Augmentation</h2>
+        <p>In the field of intelligent fault diagnosis based on deep learning, the performance of models usually relies on a large amount of class-balanced training data. However, in the actual operation of high-reliability equipment such as aviation hydraulic pumps, there are significant problems of "data scarcity" and "class imbalance":</p>
+        <ol>
+            <li><strong>Scarcity of fault samples</strong>: The probability of key equipment failure is extremely low, and some fault data failed to be effectively saved at the engineering site.</li>
+            <li><strong>Model bias</strong>: Since the number of health samples is much larger than that of fault samples, training directly with raw data will cause the model to tend to predict all samples as "healthy", thereby losing its diagnostic ability.</li>
+            <li><strong>Limitations of existing methods</strong>: Traditional signal analysis methods rely on expert experience, while data-driven methods like Generative Adversarial Networks (GANs) have problems with training instability and lack of physical interpretability in vibration signal generation.</li>
+        </ol>
+        <p>To address the above problems, the paper proposes a data augmentation method called RWE based on signal processing mechanisms, aiming to generate high-quality synthetic fault signals from a few samples.</p>
+
+        <h2 id="2-core-method-rwe">2. Core Method: Principle of Randomized Wavelet Expansion (RWE)</h2>
+        <p>RWE is an augmentation strategy specifically designed for 1D time series (vibration signals). Its core logic is to use wavelet transform to fine-tune the time-frequency features of the signal, generating new samples that retain the original fault features while possessing statistical diversity.</p>
+
+        <h3 id="21-design-concept">2.1 Design Concept</h3>
+        <p>The characteristics of mechanical faults are mainly reflected in <strong>frequency components</strong>. To ensure the validity of the generated samples, the method design follows these principles:</p>
+        <ul>
+            <li><strong>Feature retention</strong>: Keep the main frequency components of the signal unchanged, ensuring that the synthetic samples belong to the same fault category.</li>
+            <li><strong>Introduce diversity</strong>: By randomly amplifying the wavelet coefficients in specific frequency bands, simulate different manifestations under the same fault category.</li>
+            <li><strong>Statistical consistency</strong>: Force the synthetic sample to have the same mean and standard deviation as the original sample to avoid introducing irrelevant energy deviations.</li>
+        </ul>
+
+        <h3 id="22-algorithm-implementation">2.2 Algorithm Implementation Steps</h3>
+        <p>The specific process of RWE is as follows:</p>
+
+        <div align="center">
+          <img width="90%" src="https://github.com/user-attachments/assets/27f416c2-815f-44b9-9568-08a50c96851a" />
+          <p><em>Fig 1. Detailed implementation flowchart of the RWE data augmentation method</em></p>
+        </div>
+
+        <ol>
+            <li><strong>Zero-mean</strong>: Subtract the mean value from the original vibration signal.</li>
+            <li><strong>Statistics recording</strong>: Calculate the standard deviation ($\sigma_1$) of the original signal.</li>
+            <li><strong>Wavelet Packet Decomposition (WPD)</strong>: Use WPT to decompose the signal into coefficients of different frequency bands (e.g., 3-level decomposition using DB4 wavelet).</li>
+        </ol>
+
+        <div align="center">
+          <img width="90%" src="https://github.com/user-attachments/assets/b892e22c-793c-4d6b-8a2e-ad454768ae17" />
+          <p><em>Fig 2. Tree structure of 3-level WPD and corresponding frequency range division</em></p>
+        </div>
+
+        <ol start="4">
+            <li><strong>Random Expansion</strong>:
+                <ul>
+                    <li>Randomly select a wavelet packet node (representing a specific frequency band).</li>
+                    <li>Non-linearly amplify the coefficient magnitude of this band. The formula is $y = \text{sign}(x) \cdot (\text{abs}(x) + \tau)$, where $\tau$ is the random expansion amount.</li>
+                </ul>
+            </li>
+            <li><strong>Wavelet Packet Reconstruction (WPR)</strong>: Use the modified coefficients and the remaining unmodified coefficients to reconstruct the time-series signal.</li>
+            <li><strong>Zero-mean again</strong>: Remove the mean of the reconstructed signal.</li>
+            <li><strong>Standardization transform</strong>: Calculate the standard deviation ($\sigma_2$) of the reconstructed signal, and scale the signal proportionally by $t = s \cdot (\sigma_1 / \sigma_2)$ to return its standard deviation to the original level $\sigma_1$.</li>
+        </ol>
+
+        <p>Through this process, a set of augmented samples with subtle differences in frequency-domain energy distribution but consistent core fault patterns with the original signal is generated.</p>
+
+        <div align="center">
+          <img width="60%" src="https://github.com/user-attachments/assets/57e9ad87-cf75-426c-82ff-92d6d8879fc1" />
+          <p><em>Fig 3. Time-domain waveform comparison of original vibration signal (left) and RWE generated synthetic signal (right)</em></p>
+        </div>
+
+        <h2 id="3-experimental-verification">3. Experimental Verification and Analysis</h2>
+        <p>To verify the effectiveness of RWE, tests were conducted on the following three datasets, combined with a 1D Convolutional Neural Network (1D-CNN) for few-shot classification experiments:</p>
+        <ol>
+            <li><strong>Aviation Hydraulic Pump Dataset</strong>: Contains a healthy state and 5 typical faults (e.g., slipper wear, distribution pan wear).</li>
+        </ol>
+
+        <p><strong>Table 1. Health condition description and sample division of the aviation hydraulic pump dataset</strong></p>
+        <table>
+            <thead>
+                <tr>
+                    <th align="center">Label</th>
+                    <th align="left">Health Condition Description</th>
+                    <th align="center">Train Samples</th>
+                    <th align="center">Test Samples</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td align="center"><strong>H</strong></td><td align="left">Normal condition</td><td align="center">400</td><td align="center">80</td></tr>
+                <tr><td align="center"><strong>F1</strong></td><td align="left">Wear of distribution pan</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F2</strong></td><td align="left">Wear of plunger cylinder</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F3</strong></td><td align="left">Corrosion due to low entry pressure (0.2 Mpa)</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F4</strong></td><td align="left">Distortion due to high exit pressure (20 Mpa)</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F5</strong></td><td align="left">Clearance fatigue wear (2.0 mm gap)</td><td align="center">5</td><td align="center">475</td></tr>
+            </tbody>
+        </table>
+
+        <p>2. <strong>Case Western Reserve University (CWRU) Bearing Dataset</strong>: Public benchmark dataset.<br>
+           3. <strong>Gearbox Dataset</strong>: From a drivetrain simulator.</p>
+
+        <p><strong>Comparative Experiment Setup</strong>: RWE + CNN was compared with the following methods:</p>
+        <ul>
+            <li><strong>Baseline CNN</strong>: Trained using only the original few samples.</li>
+            <li><strong>DS + CNN</strong>: Down-sampling (reducing healthy samples).</li>
+            <li><strong>OS + CNN</strong>: Simple over-sampling (directly copying fault samples).</li>
+            <li><strong>SMOTE / ADASYN</strong>: Traditional interpolation-based oversampling algorithms.</li>
+        </ul>
+
+        <p><strong>Experimental Conclusions</strong>:<br>
+        In a few-shot setting (e.g., only 5 training samples per fault class), <strong>RWE + CNN</strong> outperformed comparative methods in metrics such as F1-score, Precision, and Recall. This indicates that the samples generated by RWE are more representative of features than simple duplication or linear interpolation, effectively improving the model's generalization ability to unseen samples.</p>
+
+        <h2 id="4-conclusion">4. Conclusion</h2>
+        <p>The RWE method proposed in this paper has the following characteristics:</p>
+        <ol>
+            <li><strong>Lightweight and Stability</strong>: Based on deterministic signal processing theory, it requires no generator training, computing cost is low, and results are controllable.</li>
+            <li><strong>Physical Interpretability</strong>: Generating samples by changing the amplitude of wavelet coefficients in specific frequency bands aligns with the physical characteristics of mechanical vibration signals.</li>
+            <li><strong>Strong Applicability</strong>: Experiments prove that the method can effectively alleviate overfitting caused by small samples, and is suitable for fault diagnosis tasks of aviation hydraulic pumps and other rotating machinery.</li>
+        </ol>
+
+        <hr>
+
+        <h2 id="literature-source">Literature Source</h2>
+        <ul>
+            <li><strong>Title</strong>: Data Augmentation via Randomized Wavelet Expansion and Its Application in Few-Shot Fault Diagnosis of Aviation Hydraulic Pumps</li>
+            <li><strong>Journal</strong>: <em>IEEE Transactions on Instrumentation and Measurement</em> (Vol. 71, 2022)</li>
+            <li><strong>DOI</strong>: <a href="https://doi.org/10.1109/TIM.2021.3130300">10.1109/TIM.2021.3130300</a></li>
+        </ul>
+
+    </main>
+
+</body>
+</html>

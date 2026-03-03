@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>논문 노트: 무작위 웨이블릿 확장 (RWE)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    
+    <script>
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; display: flex; min-height: 100vh; background-color: #fff; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+        .sidebar { width: 280px; background-color: #f6f8fa; border-right: 1px solid #d0d7de; position: fixed; height: 100vh; overflow-y: 단auto; padding: 24px; box-sizing: border-box; top: 0; left: 0; z-index: 100; }
+        .sidebar h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #24292f; }
+        .sidebar ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar li { margin-bottom: 8px; }
+        .sidebar a { text-decoration: none; color: #57606a; font-size: 14px; display: block; padding: 4px 0; transition: color 0.2s; }
+        .sidebar a:hover { color: #0969da; text-decoration: underline; }
+        .sidebar .sub-menu { margin-left: 20px; margin-top: 4px; font-size: 13px; }
+        .main-content { margin-left: 280px; flex: 1; padding: 40px 60px; max-width: 1000px; }
+        html { scroll-behavior: smooth; }
+        div[align="center"] { text-align: center; margin: 20px 0; }
+        table { display: block; width: 100%; overflow: auto; }
+        @media (max-width: 900px) {
+            body { display: block; }
+            .sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid #d0d7de; }
+            .main-content { margin-left: 0; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <h2>목차</h2>
+        <ul>
+            <li><a href="#1-연구-배경-및-데이터-증강의-필요성">1. 연구 배경 및 필요성</a></li>
+            <li>
+                <a href="#2-핵심-방법-무작위-웨이블릿-확장-rwe">2. 핵심 방법: RWE 원리</a>
+                <ul class="sub-menu">
+                    <li><a href="#21-설계-개념">2.1 설계 개념</a></li>
+                    <li><a href="#22-알고리즘-구현-단계">2.2 알고리즘 구현 단계</a></li>
+                </ul>
+            </li>
+            <li><a href="#3-실험-검증-및-결과-분석">3. 실험 검증 및 결과 분석</a></li>
+            <li><a href="#4-결론">4. 결론</a></li>
+            <li><a href="#문헌-출처">문헌 출처</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content markdown-body">
+        
+        <h1>논문 노트: 무작위 웨이블릿 확장을 통한 데이터 증강 방법 (RWE)</h1>
+
+        <blockquote>
+            <p><strong>Paper Title</strong>: Data Augmentation via Randomized Wavelet Expansion and Its Application in Few-Shot Fault Diagnosis of Aviation Hydraulic Pumps</p>
+            <p><strong>Journal</strong>: <em>IEEE Transactions on Instrumentation and Measurement</em>, Vol. 71, 2022</p>
+            <p><strong>DOI</strong>: <a href="https://doi.org/10.1109/TIM.2021.3130300">10.1109/TIM.2021.3130300</a></p>
+        </blockquote>
+
+        <p>
+            <img src="https://img.shields.io/badge/DOI-10.1109%2FTIM.2021.3130300-007EC6" alt="DOI">
+            <img src="https://img.shields.io/badge/Status-Published-success" alt="Status">
+            <img src="https://img.shields.io/badge/Topic-Data_Augmentation-orange" alt="Topic">
+        </p>
+
+        <hr>
+
+        <h2 id="1-연구-배경-및-데이터-증강의-필요성">1. 연구 배경 및 데이터 증강의 필요성</h2>
+        <p>딥러닝 기반 지능형 고장 진단 분야에서 모델의 성능은 일반적으로 대량의 클래스 균형을 이룬 훈련 데이터에 의존합니다. 그러나 항공 유압 펌프와 같은 신뢰성이 높은 장비의 실제 운영에서는 눈에 띄는 "데이터 부족" 및 "클래스 불균형" 문제가 존재합니다.</p>
+        <ol>
+            <li><strong>고장 샘플의 희소성</strong>: 주요 장비가 고장날 확률은 극히 낮으며 일부 고장 데이터는 엔지니어링 현장에서 효과적으로 저장되지 못합니다.</li>
+            <li><strong>모델 편향</strong>: 정상 샘플의 수가 고장 샘플보다 훨씬 많기 때문에 원본 데이터를 직접 사용하여 훈련하면 모델이 모든 샘플을 "정상"으로 예측하는 경향이 있어 진단 능력을 상실하게 됩니다.</li>
+            <li><strong>기존 방법의 한계</strong>: 기존 신호 분석 방법은 전문가의 경험에 의존하며 생성적 적대 신경망(GAN)과 같은 데이터 기반 방법은 진동 신호 생성에서 훈련 불안정성 및 물리적 의미 결여의 문제가 있습니다.</li>
+        </ol>
+        <p>위의 문제를 해결하기 위해 논문은 신호 처리 메커니즘을 기반으로 한 데이터 증강 방법 RWE를 제안하여 소수의 샘플을 통해 고품질의 합성 고장 신호를 생성하는 것을 목표로 합니다.</p>
+
+        <h2 id="2-핵심-방법-무작위-웨이블릿-확장-rwe">2. 핵심 방법: 무작위 웨이블릿 확장 (RWE) 원리</h2>
+        <p>RWE는 1차원 시계열(진동 신호)을 위해 특별히 설계된 증강 전략입니다. 핵심 논리는 웨이블릿 변환을 사용하여 신호의 시간-주파수 특징을 미세 조정하여 원래의 고장 특징을 유지하면서 통계적 다양성을 가진 새로운 샘플을 생성하는 것입니다.</p>
+
+        <h3 id="21-설계-개념">2.1 설계 개념</h3>
+        <p>기계적 고장의 특징은 주로 <strong>주파수 성분</strong>에 반영됩니다. 생성된 샘플이 유효하도록 보장하기 위해 방법 설계는 다음 원칙을 따릅니다:</p>
+        <ul>
+            <li><strong>특징 유지</strong>: 신호의 주요 주파수 성분을 변경하지 않고 유지하여 합성 샘플이 동일한 고장 범주에 속하도록 보장합니다.</li>
+            <li><strong>다양성 도입</strong>: 특정 주파수 대역의 웨이블릿 계수를 무작위로 증폭하여 동일한 고장 범주 내에서 다른 표현 형태를 시뮬레이션합니다.</li>
+            <li><strong>통계적 일관성</strong>: 관련 없는 에너지 편차를 피하기 위해 합성 샘플이 원본 샘플과 동일한 평균 및 표준 편차를 갖도록 강제합니다.</li>
+        </ul>
+
+        <h3 id="22-알고리즘-구현-단계">2.2 알고리즘 구현 단계</h3>
+        <p>RWE의 구체적인 절차는 다음과 같습니다:</p>
+
+        <div align="center">
+          <img width="90%" src="https://github.com/user-attachments/assets/27f416c2-815f-44b9-9568-08a50c96851a" />
+          <p><em>그림 1 RWE 데이터 증강 방법의 상세 구현 절차 흐름도</em></p>
+        </div>
+
+        <ol>
+            <li><strong>영평균화(Zero-mean)</strong>: 원본 진동 신호에서 평균값을 뺍니다.</li>
+            <li><strong>통계량 기록</strong>: 원본 신호의 표준 편차($\sigma_1$)를 계산합니다.</li>
+            <li><strong>웨이블릿 패킷 분해 (WPD)</strong>: 웨이블릿 패킷 변환을 사용하여 신호를 다른 주파수 대역의 계수로 분해합니다 (예: DB4 웨이블릿을 사용하여 3계층 분해).</li>
+        </ol>
+
+        <div align="center">
+          <img width="90%" src="https://github.com/user-attachments/assets/b892e22c-793c-4d6b-8a2e-ad454768ae17" />
+          <p><em>그림 2 3계층 웨이블릿 패킷 분해 트리 구조 및 해당 주파수 범위 분할</em></p>
+        </div>
+
+        <ol start="4">
+            <li><strong>무작위 확장 (Random Expansion)</strong>:
+                <ul>
+                    <li>웨이블릿 패킷 노드(특정 주파수 대역을 나타냄)를 무작위로 선택합니다.</li>
+                    <li>이 대역의 계수 진폭을 비선형적으로 증폭합니다. 증폭 공식은 $y = \text{sign}(x) \cdot (\text{abs}(x) + \tau)$ 이며 여기서 $\tau$는 무작위 확장량입니다.</li>
+                </ul>
+            </li>
+            <li><strong>웨이블릿 패킷 재구성 (WPR)</strong>: 수정된 계수와 수정되지 않은 나머지 계수를 사용하여 시계열 신호로 재구성합니다.</li>
+            <li><strong>다시 영평균화</strong>: 재구성된 신호에서 평균을 제거합니다.</li>
+            <li><strong>표준화 변환</strong>: 재구성된 신호의 표준 편차($\sigma_2$)를 계산하고 신호를 $t = s \cdot (\sigma_1 / \sigma_2)$ 비율로 스케일링하여 표준 편차를 원래 수준인 $\sigma_1$로 되돌립니다.</li>
+        </ol>
+
+        <p>이 프로세스를 통해 주파수 도메인 에너지 분포에 미세한 차이가 있지만 핵심 고장 패턴은 원본 신호와 일치하는 확장 샘플 그룹이 생성됩니다.</p>
+
+        <div align="center">
+          <img width="60%" src="https://github.com/user-attachments/assets/57e9ad87-cf75-426c-82ff-92d6d8879fc1" />
+          <p><em>그림 3 원본 진동 신호(왼쪽)와 RWE가 생성한 합성 신호(오른쪽)의 시간 도메인 파형 비교</em></p>
+        </div>
+
+        <h2 id="3-실험-검증-및-결과-분석">3. 실험 검증 및 결과 분석</h2>
+        <p>RWE의 효과를 검증하기 위해 다음 세 가지 데이터 세트에서 테스트를 수행하고 1차원 컨볼루션 신경망(1D-CNN)과 결합하여 퓨샷(Few-shot) 분류 실험을 수행했습니다:</p>
+        <ol>
+            <li><strong>항공 유압 펌프 데이터 세트</strong>: 정상 상태 및 5가지 전형적인 고장(슬리퍼 마모, 배분반 마모 등)을 포함합니다.</li>
+        </ol>
+
+        <p><strong>표 1 항공 유압 펌프 실험 데이터 세트의 건강 상태 설명 및 샘플 분할</strong></p>
+        <table>
+            <thead>
+                <tr>
+                    <th align="center">라벨</th>
+                    <th align="left">건강 상태 설명</th>
+                    <th align="center">훈련 샘플 수</th>
+                    <th align="center">테스트 샘플 수</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td align="center"><strong>H</strong></td><td align="left">정상 (고장 없음)</td><td align="center">400</td><td align="center">80</td></tr>
+                <tr><td align="center"><strong>F1</strong></td><td align="left">배분반 마모</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F2</strong></td><td align="left">플런저 실린더 마모</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F3</strong></td><td align="left">낮은 입구 압력 (0.2 Mpa)으로 인한 부식</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F4</strong></td><td align="left">높은 출구 압력 (20 Mpa)으로 인한 변형</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F5</strong></td><td align="left">간극 피로 마모 (2.0 mm 간극)</td><td align="center">5</td><td align="center">475</td></tr>
+            </tbody>
+        </table>
+
+        <p>2. <strong>케이스 웨스턴 리저브 대학교 (CWRU) 베어링 데이터 세트</strong>: 공개 벤치마크 데이터 세트.<br>
+           3. <strong>기어박스 데이터 세트</strong>: 구동계 시뮬레이터에서 가져옴.</p>
+
+        <p><strong>비교 실험 설정</strong>: RWE + CNN을 다음 방법과 비교했습니다:</p>
+        <ul>
+            <li><strong>Baseline CNN</strong>: 원본 소수 샘플만 사용하여 훈련.</li>
+            <li><strong>DS + CNN</strong>: 다운샘플링 (정상 샘플 축소).</li>
+            <li><strong>OS + CNN</strong>: 단순 오버샘플링 (고장 샘플 직접 복사).</li>
+            <li><strong>SMOTE / ADASYN</strong>: 기존의 보간 기반 오버샘플링 알고리즘.</li>
+        </ul>
+
+        <p><strong>실험 결론</strong>:<br>
+        퓨샷 설정(예: 각 고장 클래스당 훈련 샘플이 5개뿐인 경우) 하에서 <strong>RWE + CNN</strong>은 F1 점수, 정밀도(Precision), 재현율(Recall) 등의 지표에서 비교 방법을 능가했습니다. 이는 RWE가 생성한 샘플이 단순한 복제나 선형 보간보다 더 나은 특징 대표성을 가지며 본 적 없는 샘플에 대한 모델의 일반화 능력을 효과적으로 향상시킬 수 있음을 나타냅니다.</p>
+
+        <h2 id="4-결론">4. 결론</h2>
+        <p>논문에서 제안한 RWE 방법은 다음과 같은 특징을 갖습니다:</p>
+        <ol>
+            <li><strong>경량성 및 안정성</strong>: 결정론적인 신호 처리 이론을 기반으로 하여 생성기를 훈련할 필요가 없으며 계산 비용이 낮고 결과를 제어할 수 있습니다.</li>
+            <li><strong>물리적 해석 가능성</strong>: 특정 주파수 대역의 웨이블릿 계수 진폭을 변경하여 샘플을 생성하는 것은 기계적 진동 신호의 물리적 특성과 일치합니다.</li>
+            <li><strong>강한 적용성</strong>: 실험은 이 방법이 소규모 샘플로 인한 과적합 문제를 효과적으로 완화할 수 있으며 항공 유압 펌프 및 기타 회전 기계의 고장 진단 작업에 적합하다는 것을 증명했습니다.</li>
+        </ol>
+
+        <hr>
+
+        <h2 id="문헌-출처">문헌 출처</h2>
+        <ul>
+            <li><strong>Title</strong>: Data Augmentation via Randomized Wavelet Expansion and Its Application in Few-Shot Fault Diagnosis of Aviation Hydraulic Pumps</li>
+            <li><strong>Journal</strong>: <em>IEEE Transactions on Instrumentation and Measurement</em> (Vol. 71, 2022)</li>
+            <li><strong>DOI</strong>: <a href="https://doi.org/10.1109/TIM.2021.3130300">10.1109/TIM.2021.3130300</a></li>
+        </ul>
+
+    </main>
+
+</body>
+</html>

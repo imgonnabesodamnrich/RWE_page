@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>論文ノート：ランダム化ウェーブレット拡張 (RWE)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.2.0/github-markdown.min.css">
+    
+    <script>
+        MathJax = { tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] } };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        body { margin: 0; padding: 0; display: flex; min-height: 100vh; background-color: #fff; font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif; }
+        .sidebar { width: 280px; background-color: #f6f8fa; border-right: 1px solid #d0d7de; position: fixed; height: 100vh; overflow-y: auto; padding: 24px; box-sizing: border-box; top: 0; left: 0; z-index: 100; }
+        .sidebar h2 { font-size: 16px; font-weight: 600; margin-bottom: 16px; color: #24292f; }
+        .sidebar ul { list-style: none; padding: 0; margin: 0; }
+        .sidebar li { margin-bottom: 8px; }
+        .sidebar a { text-decoration: none; color: #57606a; font-size: 14px; display: block; padding: 4px 0; transition: color 0.2s; }
+        .sidebar a:hover { color: #0969da; text-decoration: underline; }
+        .sidebar .sub-menu { margin-left: 20px; margin-top: 4px; font-size: 13px; }
+        .main-content { margin-left: 280px; flex: 1; padding: 40px 60px; max-width: 1000px; }
+        html { scroll-behavior: smooth; }
+        div[align="center"] { text-align: center; margin: 20px 0; }
+        table { display: block; width: 100%; overflow: auto; }
+        @media (max-width: 900px) {
+            body { display: block; }
+            .sidebar { position: relative; width: 100%; height: auto; border-right: none; border-bottom: 1px solid #d0d7de; }
+            .main-content { margin-left: 0; padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="sidebar">
+        <h2>目次</h2>
+        <ul>
+            <li><a href="#1-研究背景とデータ拡張の必要性">1. 研究背景と必要性</a></li>
+            <li>
+                <a href="#2-核心手法ランダム化ウェーブレット拡張-rwe">2. 核心手法：RWE の原理</a>
+                <ul class="sub-menu">
+                    <li><a href="#21-設計思想">2.1 設計思想</a></li>
+                    <li><a href="#22-アルゴリズムの実行手順">2.2 アルゴリズムの実行手順</a></li>
+                </ul>
+            </li>
+            <li><a href="#3-実験検証と結果分析">3. 実験検証と結果分析</a></li>
+            <li><a href="#4-結論">4. 結論</a></li>
+            <li><a href="#文献情報">文献情報</a></li>
+        </ul>
+    </nav>
+
+    <main class="main-content markdown-body">
+        
+        <h1>論文ノート：ランダム化ウェーブレット拡張 (RWE) に基づくデータ拡張手法</h1>
+
+        <blockquote>
+            <p><strong>Paper Title</strong>: Data Augmentation via Randomized Wavelet Expansion and Its Application in Few-Shot Fault Diagnosis of Aviation Hydraulic Pumps</p>
+            <p><strong>Journal</strong>: <em>IEEE Transactions on Instrumentation and Measurement</em>, Vol. 71, 2022</p>
+            <p><strong>DOI</strong>: <a href="https://doi.org/10.1109/TIM.2021.3130300">10.1109/TIM.2021.3130300</a></p>
+        </blockquote>
+
+        <p>
+            <img src="https://img.shields.io/badge/DOI-10.1109%2FTIM.2021.3130300-007EC6" alt="DOI">
+            <img src="https://img.shields.io/badge/Status-Published-success" alt="Status">
+            <img src="https://img.shields.io/badge/Topic-Data_Augmentation-orange" alt="Topic">
+        </p>
+
+        <hr>
+
+        <h2 id="1-研究背景とデータ拡張の必要性">1. 研究背景とデータ拡張の必要性</h2>
+        <p>深層学習に基づくインテリジェントな故障診断の分野において、モデルの性能は通常、大量かつクラスのバランスが取れた学習データに依存します。しかし、航空油圧ポンプなどの信頼性の高い機器の実際の運用においては、「データ不足」と「クラスの不均衡」という顕著な問題が存在します。</p>
+        <ol>
+            <li><strong>故障サンプルの希少性</strong>：重要な機器が故障する確率は極めて低く、エンジニアリング現場では一部の故障データが有効に保存されていません。</li>
+            <li><strong>モデルのバイアス</strong>：正常サンプルの数が故障サンプルよりもはるかに多いため、元のデータを直接使用して学習すると、モデルはすべてのサンプルを「正常」と予測する傾向があり、診断能力を失います。</li>
+            <li><strong>既存手法の限界</strong>：従来の信号解析手法は専門家の経験に依存しており、GANなどのデータ駆動型手法は振動信号の生成において学習が不安定であり、物理的な意味が欠如しているという問題があります。</li>
+        </ol>
+        <p>上記の問題に対処するため、本論文では信号処理メカニズムに基づくデータ拡張手法 RWE を提案し、少数のサンプルから高品質の合成故障信号を生成することを目的としています。</p>
+
+        <h2 id="2-核心手法ランダム化ウェーブレット拡張-rwe">2. 核心手法：ランダム化ウェーブレット拡張 (RWE) の原理</h2>
+        <p>RWE は、1次元の時系列（振動信号）に特化して設計された拡張戦略です。その核心的な論理は、ウェーブレット変換を利用して信号の時間周波数特徴を微調整し、元の故障特徴を保持しつつ統計的な多様性を持つ新しいサンプルを生成することです。</p>
+
+        <h3 id="21-設計思想">2.1 設計思想</h3>
+        <p>機械的故障の特徴は主に<strong>周波数成分</strong>に現れます。生成されたサンプルが有効であることを保証するため、手法の設計は以下の原則に従います：</p>
+        <ul>
+            <li><strong>特徴の保持</strong>：信号の主要な周波数成分を不変に保ち、合成サンプルが同一の故障カテゴリに属することを保証します。</li>
+            <li><strong>多様性の導入</strong>：特定の周波数帯域のウェーブレット係数をランダムに増幅することで、同じ故障カテゴリの下での異なる表現形態をシミュレートします。</li>
+            <li><strong>統計的一貫性</strong>：無関係なエネルギーの偏差を導入しないように、合成サンプルの平均と標準偏差が元のサンプルと同じになるように強制します。</li>
+        </ul>
+
+        <h3 id="22-アルゴリズムの実行手順">2.2 アルゴリズムの実行手順</h3>
+        <p>RWE の具体的なプロセスは以下の通りです：</p>
+
+        <div align="center">
+          <img width="90%" src="https://github.com/user-attachments/assets/27f416c2-815f-44b9-9568-08a50c96851a" />
+          <p><em>図1 RWE データ拡張手法の詳細な実行手順フローチャート</em></p>
+        </div>
+
+        <ol>
+            <li><strong>ゼロ平均化</strong>：元の振動信号からその平均値を引きます。</li>
+            <li><strong>統計量の記録</strong>：元の信号の標準偏差 ($\sigma_1$) を計算します。</li>
+            <li><strong>ウェーブレットパケット分解 (WPD)</strong>：ウェーブレットパケット変換を使用して、信号を異なる周波数帯域の係数に分解します（例：DB4 ウェーブレットを用いた 3 レベル分解）。</li>
+        </ol>
+
+        <div align="center">
+          <img width="90%" src="https://github.com/user-attachments/assets/b892e22c-793c-4d6b-8a2e-ad454768ae17" />
+          <p><em>図2 3レベルのウェーブレットパケット分解ツリー構造と対応する周波数範囲の分割</em></p>
+        </div>
+
+        <ol start="4">
+            <li><strong>ランダム拡張 (Random Expansion)</strong>：
+                <ul>
+                    <li>ウェーブレットパケットノード（特定の周波数帯域を代表）をランダムに選択します。</li>
+                    <li>その帯域の係数の振幅を非線形に増幅します。増幅の公式は $y = \text{sign}(x) \cdot (\text{abs}(x) + \tau)$ であり、ここで $\tau$ はランダムな拡張量です。</li>
+                </ul>
+            </li>
+            <li><strong>ウェーブレットパケット再構成 (WPR)</strong>：変更された係数と残りの変更されていない係数を使用して、時系列信号に再構成します。</li>
+            <li><strong>再度ゼロ平均化</strong>：再構成された信号から平均値を引きます。</li>
+            <li><strong>標準化変換</strong>：再構成された信号の標準偏差 ($\sigma_2$) を計算し、信号を $t = s \cdot (\sigma_1 / \sigma_2)$ の比率でスケーリングして、標準偏差を元のレベル $\sigma_1$ に戻します。</li>
+        </ol>
+
+        <p>このプロセスを通じて、周波数領域のエネルギー分布に微妙な違いがあるものの、主要な故障パターンは元の信号と一致する拡張サンプル群が生成されます。</p>
+
+        <div align="center">
+          <img width="60%" src="https://github.com/user-attachments/assets/57e9ad87-cf75-426c-82ff-92d6d8879fc1" />
+          <p><em>図3 元の振動信号（左）と RWE によって生成された合成信号（右）の時間領域波形の比較</em></p>
+        </div>
+
+        <h2 id="3-実験検証と結果分析">3. 実験検証と結果分析</h2>
+        <p>RWE の有効性を検証するために、以下の 3 つのデータセットでテストを行い、1次元畳み込みニューラルネットワーク (1D-CNN) と組み合わせて少数サンプル分類実験を実施しました：</p>
+        <ol>
+            <li><strong>航空油圧ポンプデータセット</strong>：正常状態と 5 つの典型的な故障（スリッパの摩耗、配油盤の摩耗など）が含まれます。</li>
+        </ol>
+
+        <p><strong>表1 航空油圧ポンプ実験データセットの健康状態の説明とサンプルの分割</strong></p>
+        <table>
+            <thead>
+                <tr>
+                    <th align="center">ラベル</th>
+                    <th align="left">健康状態の説明</th>
+                    <th align="center">学習サンプル数</th>
+                    <th align="center">テストサンプル数</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td align="center"><strong>H</strong></td><td align="left">正常</td><td align="center">400</td><td align="center">80</td></tr>
+                <tr><td align="center"><strong>F1</strong></td><td align="left">配油盤の摩耗</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F2</strong></td><td align="left">プランジャーシリンダーの摩耗</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F3</strong></td><td align="left">低入口圧力 (0.2 Mpa) による腐食</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F4</strong></td><td align="left">高出口圧力 (20 Mpa) による変形</td><td align="center">5</td><td align="center">475</td></tr>
+                <tr><td align="center"><strong>F5</strong></td><td align="left">隙間疲労摩耗 (2.0 mm 隙間)</td><td align="center">5</td><td align="center">475</td></tr>
+            </tbody>
+        </table>
+
+        <p>2. <strong>ケース・ウェスタン・リザーブ大学 (CWRU) ベアリングデータセット</strong>：公開ベンチマークデータセット。<br>
+           3. <strong>ギアボックスデータセット</strong>：ドライブトレインシミュレーターから取得。</p>
+
+        <p><strong>比較実験の設定</strong>：RWE + CNN を以下の手法と比較しました：</p>
+        <ul>
+            <li><strong>Baseline CNN</strong>：元の少数のサンプルのみを使用して学習。</li>
+            <li><strong>DS + CNN</strong>：アンダーサンプリング（正常サンプルを減らす）。</li>
+            <li><strong>OS + CNN</strong>：単純なオーバーサンプリング（故障サンプルを直接複製）。</li>
+            <li><strong>SMOTE / ADASYN</strong>：従来の補間ベースのオーバーサンプリングアルゴリズム。</li>
+        </ul>
+
+        <p><strong>実験の結論</strong>：<br>
+        少数サンプルの設定下（例：各故障カテゴリにつき学習サンプルが 5 つのみの場合）、<strong>RWE + CNN</strong> は F1スコア、適合率 (Precision)、再現率 (Recall) などの指標において比較手法を上回りました。これは、RWE によって生成されたサンプルが、単純な複製や線形補間よりも特徴を代表しており、未知のサンプルに対するモデルの汎化能力を効果的に向上させることができることを示しています。</p>
+
+        <h2 id="4-結論">4. 結論</h2>
+        <p>論文で提案された RWE 手法は以下の特徴を持っています：</p>
+        <ol>
+            <li><strong>軽量性と安定性</strong>：決定論的な信号処理理論に基づいており、ジェネレーターの学習が不要で、計算コストが低く結果が制御可能です。</li>
+            <li><strong>物理的解釈可能性</strong>：特定の周波数帯域のウェーブレット係数の振幅を変更してサンプルを生成することは、機械振動信号の物理的特性と一致しています。</li>
+            <li><strong>高い適用性</strong>：実験により、この手法は少数サンプルによる過学習問題を効果的に緩和でき、航空油圧ポンプやその他の回転機械の故障診断タスクに適していることが証明されました。</li>
+        </ol>
+
+        <hr>
+
+        <h2 id="文献情報">文献情報</h2>
+        <ul>
+            <li><strong>タイトル</strong>：Data Augmentation via Randomized Wavelet Expansion and Its Application in Few-Shot Fault Diagnosis of Aviation Hydraulic Pumps</li>
+            <li><strong>ジャーナル</strong>：<em>IEEE Transactions on Instrumentation and Measurement</em> (Vol. 71, 2022)</li>
+            <li><strong>DOI</strong>：<a href="https://doi.org/10.1109/TIM.2021.3130300">10.1109/TIM.2021.3130300</a></li>
+        </ul>
+
+    </main>
+
+</body>
+</html>
